@@ -1,0 +1,22 @@
+{
+  "name": "skeleton",
+  "version": "0.1.0",
+  "scripts": {
+    "test": "make test"
+  },
+  "devDependencies": {
+    "broccoli": "^0.12.3",
+    "broccoli-coffee": "^0.1.0",
+    "broccoli-coffeelint": "git://github.com/runtastic/broccoli-coffeelint.git",
+    "broccoli-es6-concatenator": "^0.1.6",
+    "broccoli-export-tree": "^0.3.2",
+    "broccoli-file-mover": "^0.3.5",
+    "broccoli-merge-trees": "^0.1.4",
+    "broccoli-static-compiler": "^0.1.4",
+    "karma": "^0.12.16",
+    "karma-chrome-launcher": "^0.1.4",
+    "karma-qunit": "^0.1.3",
+    "qunitjs": "^1.14.0",
+    "timekeeper": "0.0.4"
+  }
+}
