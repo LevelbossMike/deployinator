@@ -1,6 +1,6 @@
 RedisAdapter = require('./adapters/redis_adapter')
 
-exports.Deploy = class Deploy
+module.exports = class Deploy
 
   # Public: Constructor function for the Deploy class. Deploy needs an adapter
   # to `know` which document-store to deploy to. When not passing an adapter

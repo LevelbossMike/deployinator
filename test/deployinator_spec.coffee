@@ -1,7 +1,7 @@
 expect      = require('expect.js')
 redis       = require('then-redis')
 timekeeper  = require('timekeeper')
-Deploy      = require('../../../dist/deployinator.js').Deploy
+Deploy      = require('../../../dist/deployinator.js')
 
 REDIS_CONNECTION_OPTIONS = { host: 'localhost', port: 6379 }
 DOCUMENT_TO_SAVE         = 'Hello'

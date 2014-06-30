@@ -1,6 +1,7 @@
 {
-  "name": "skeleton",
+  "name": "deployinator",
   "version": "0.1.0",
+  "main": "dist/deployinator.js",
   "scripts": {
     "test": "make test"
   },
@@ -8,20 +9,27 @@
     "broccoli": "^0.12.3",
     "broccoli-coffee": "^0.1.0",
     "broccoli-coffeelint": "git://github.com/runtastic/broccoli-coffeelint.git",
-    "broccoli-es6-concatenator": "^0.1.6",
     "broccoli-export-tree": "^0.3.2",
-    "broccoli-file-mover": "^0.3.5",
     "broccoli-merge-trees": "^0.1.4",
-    "broccoli-static-compiler": "^0.1.4",
     "expect.js": "^0.3.1",
-    "karma": "^0.12.16",
-    "karma-chrome-launcher": "^0.1.4",
-    "karma-qunit": "^0.1.3",
     "mocha": "^1.20.1",
-    "qunitjs": "^1.14.0",
     "timekeeper": "0.0.4"
   },
   "dependencies": {
     "then-redis": "^0.3.12"
-  }
+  },
+  "description": "Lightning fast deployments of JavaScript Apps",
+  "directories": {
+    "test": "test"
+  },
+  "repository": {
+    "type": "git",
+    "url": "https://github.com/LevelbossMike/deployinator.git"
+  },
+  "author": "Michael Klein",
+  "license": "MIT",
+  "bugs": {
+    "url": "https://github.com/LevelbossMike/deployinator/issues"
+  },
+  "homepage": "https://github.com/LevelbossMike/deployinator"
 }

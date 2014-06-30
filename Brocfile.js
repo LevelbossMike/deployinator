@@ -1,5 +1,3 @@
-var compileES6     = require('broccoli-es6-concatenator');
-var moveFile       = require('broccoli-file-mover');
 var mergeTrees     = require('broccoli-merge-trees');
 var exportTree     = require('broccoli-export-tree');
 var compileCoffee  = require('broccoli-coffee');

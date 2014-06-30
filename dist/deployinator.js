@@ -2,7 +2,7 @@ var Deploy, RedisAdapter;
 
 RedisAdapter = require('./adapters/redis_adapter');
 
-exports.Deploy = Deploy = (function() {
+module.exports = Deploy = (function() {
   function Deploy(options) {
     var _ref;
     this.adapter = (_ref = options.adapter) != null ? _ref : new RedisAdapter(options.storeConfig);
