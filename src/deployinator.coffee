@@ -39,4 +39,4 @@ module.exports = class Deploy
   # Internal: Gets the current time as a UnixTimestamp and sets it as the
   # timestamp property on this {Object}.
   _getTimestamp: ->
-    new Date().getTime()
+    @timestamp = new Date().getTime()

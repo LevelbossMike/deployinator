@@ -26,7 +26,7 @@ module.exports = Deploy = (function() {
   };
 
   Deploy.prototype._getTimestamp = function() {
-    return new Date().getTime();
+    return this.timestamp = new Date().getTime();
   };
 
   return Deploy;

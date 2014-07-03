@@ -49,6 +49,9 @@ describe 'Deploy', ->
         .then (value) ->
           expect(value.length).to.be(MANIFEST_SIZE)
 
+    it 'makes the deploy timestamp available as a property after deploying', ->
+      expect(deploy.timestamp).to.be(TIMESTAMP)
+
   describe '#listDeploys ', ->
     times = []
 
