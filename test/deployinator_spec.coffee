@@ -1,38 +1,66 @@
-expect      = require('expect.js')
-redis       = require('then-redis')
-timekeeper  = require('timekeeper')
-Deploy      = require('../../../dist/deployinator.js')
+expect     = require('expect.js')
+redis      = require('then-redis')
+RSVP       = require('rsvp')
+git        = require('gitty')
+sinon      = require('sinon')
+Deploy     = require('../../../dist/deployinator.js')
+
+getShortShaVersion = (sha) ->
+  sha.slice(0, 6)
 
 REDIS_CONNECTION_OPTIONS = { host: 'localhost', port: 6379 }
 DOCUMENT_TO_SAVE         = 'Hello'
 MANIFEST                 = 'test-deploy-manifest'
 MANIFEST_SIZE            = 10
-TIMESTAMP                = 1403807574351
+GIT_SHA                  = '04b724a6c656a21795067f9c344d22532cf593ae'
+GIT_SHA_SHORTENED        = getShortShaVersion(GIT_SHA)
 redisClient              = redis.createClient(REDIS_CONNECTION_OPTIONS)
+deploy                   = null
 
 options =
   storeConfig: REDIS_CONNECTION_OPTIONS
   manifest: MANIFEST
   manifestSize: MANIFEST_SIZE
 
-deployWithTimestamp = (deploy, timestamp) ->
-  time = new Date(timestamp)
-  timekeeper.freeze(time)
-  deploy.deploy(DOCUMENT_TO_SAVE)
-  timekeeper.reset()
+deployWithSHA = (sha, done) ->
+  sandbox = sinon.sandbox.create()
+  sandbox
+    .stub(git.Command.prototype, 'exec')
+    .yields('error', sha, 'stderr')
+  deploy = new Deploy(options)
+
+  deployment = deploy.deploy(DOCUMENT_TO_SAVE)
+  deployment.then ->
+    done?()
+
+  sandbox.restore()
+  deployment
+
+fillUpManifest = (deploymentCount, shaList = null) ->
+  promises = []
+  for n in[1..deploymentCount]
+    newSHA = GIT_SHA.replace(GIT_SHA.charAt(0), n)
+    shaList.push(getShortShaVersion(newSHA)) if shaList?
+    promises.push(deployWithSHA(newSHA))
+  promises
+
+cleanUpRedis = (done) ->
+  redisClient.del(MANIFEST)
+    .then(-> redisClient.del(GIT_SHA_SHORTENED))
+    .then(-> done?())
 
 describe 'Deploy', ->
 
-  deploy = new Deploy(options)
-
   describe '#deploy', ->
 
-    beforeEach ->
-      redisClient.del(MANIFEST)
-      deployWithTimestamp(deploy, TIMESTAMP)
+    beforeEach (done) ->
+      deployWithSHA(GIT_SHA, done)
 
-    it 'stores a passed value in Redis with the current unix-time as key', ->
-      redisClient.get(TIMESTAMP)
+    afterEach (done) ->
+      cleanUpRedis(done)
+
+    it 'stores a passed value in Redis with the current git-sha as key', ->
+      redisClient.get(GIT_SHA_SHORTENED)
         .then (value) ->
           expect(value).to.be(DOCUMENT_TO_SAVE)
 
@@ -43,32 +71,32 @@ describe 'Deploy', ->
 
     it 'only keeps <manifestSize> revisions of deploys', ->
       moreThanManifestSize = MANIFEST_SIZE + 2
-      for n in[1..moreThanManifestSize]
-        deploy.deploy("i#{DOCUMENT_TO_SAVE}-#{n}")
-      redisClient.lrange(MANIFEST, 0, moreThanManifestSize)
-        .then (value) ->
-          expect(value.length).to.be(MANIFEST_SIZE)
 
-    it 'makes the deploy timestamp available as a property after deploying', ->
-      expect(deploy.timestamp).to.be(TIMESTAMP)
+      RSVP.all(fillUpManifest(moreThanManifestSize)).then ->
+        redisClient.lrange(MANIFEST, 0, moreThanManifestSize)
+          .then (value) ->
+            expect(value.length).to.be(MANIFEST_SIZE)
+
+    it 'makes the deploy key available as a property after deploying', ->
+      expect(deploy.key).to.be(GIT_SHA_SHORTENED)
 
   describe '#listDeploys ', ->
-    times = []
+    shaList = []
 
     beforeEach ->
-      times = []
-      redisClient.del(MANIFEST)
-      for timestamp in [TIMESTAMP..(TIMESTAMP + MANIFEST_SIZE - 1)]
-        times.push(timestamp)
-        deployWithTimestamp(deploy, timestamp)
+      shaList = []
+      fillUpManifest(MANIFEST_SIZE, shaList)
+
+    afterEach (done) ->
+      cleanUpRedis(done)
 
     it 'lists all the deploys stored in the deploy manifest', ->
       deploy.listDeploys()
         .then (values) ->
-          expect(values).to.contain("#{timestamp}") for timestamp in times
+          expect(values).to.contain("#{sha}") for sha in shaList
 
     it 'lists the last n-deploys when passing a number n', ->
       deploy.listDeploys(5)
         .then (values) ->
           expect(values.length).to.be(5)
-          expect(values[0]).to.be("#{times[times.length - 1]}")
+          expect(values[0]).to.be("#{shaList[shaList.length - 1]}")

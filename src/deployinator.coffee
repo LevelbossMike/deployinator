@@ -1,4 +1,5 @@
 RedisAdapter = require('./adapters/redis_adapter')
+git          = require('gitty')
 
 module.exports = class Deploy
 
@@ -27,10 +28,10 @@ module.exports = class Deploy
     @manifestSize = options.manifestSize
 
   deploy: (value) ->
-    timestamp = @_getTimestamp()
+    key = @_getKey()
 
-    @adapter.deployBootstrapCode(timestamp, value)
-    @adapter.updateManifest(@manifest, timestamp)
+    @adapter.deployBootstrapCode(key, value)
+    @adapter.updateManifest(@manifest, key)
     @adapter.cleanUpManifest(@manifest, @manifestSize)
 
   listDeploys: (limit = @manifestSize) ->
@@ -38,5 +39,22 @@ module.exports = class Deploy
 
   # Internal: Gets the current time as a UnixTimestamp and sets it as the
   # timestamp property on this {Object}.
-  _getTimestamp: ->
-    @timestamp = new Date().getTime()
+  _getKey: ->
+    @key = null
+    cmd  = new git.Command('./', 'rev-parse', [], 'HEAD')
+
+    cmd.exec(@_sliceGitSHA.bind(@))
+
+    @key
+
+  # Internal: Callback function that gets called when git commands execs. Git
+  # command gets executed with the 'Gitty' node-module. See
+  # https://github.com/gordonwritescode/gitty for details.
+  #
+  # _error - Error that gets passed when gitty call fails
+  # sha - stdout message that gets passed when git-rev-Command succeeds
+  # _stderr - stderr message that gets passen when git-rev command fails
+  #
+  # Returns a String.
+  _sliceGitSHA: (_error, sha, _stderr) ->
+    @key = sha.slice(0,6)

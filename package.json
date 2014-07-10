@@ -12,8 +12,10 @@
     "broccoli-export-tree": "^0.3.2",
     "broccoli-merge-trees": "^0.1.4",
     "expect.js": "^0.3.1",
+    "gitty": "^2.1.2",
     "mocha": "^1.20.1",
-    "timekeeper": "0.0.4"
+    "rsvp": "^3.0.9",
+    "sinon": "^1.10.2"
   },
   "dependencies": {
     "then-redis": "^0.3.12"
