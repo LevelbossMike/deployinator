@@ -27,15 +27,15 @@ module.exports = class Deploy
     @manifest     = options.manifest
     @manifestSize = options.manifestSize
 
-  deploy: (value) ->
+  upload: (value) ->
     key = @_getKey()
 
-    @adapter.deployBootstrapCode(key, value)
+    @adapter.uploadBootstrapCode(key, value)
     @adapter.updateManifest(@manifest, key)
     @adapter.cleanUpManifest(@manifest, @manifestSize)
 
-  listDeploys: (limit = @manifestSize) ->
-    @adapter.listDeploys(@manifest, limit)
+  listUploads: (limit = @manifestSize) ->
+    @adapter.listUploads(@manifest, limit)
 
   # Internal: Gets the current time as a UnixTimestamp and sets it as the
   # timestamp property on this {Object}.
@@ -55,6 +55,6 @@ module.exports = class Deploy
   # sha - stdout message that gets passed when git-rev-Command succeeds
   # _stderr - stderr message that gets passen when git-rev command fails
   #
-  # Returns a String.
+  # Returns a {String}.
   _sliceGitSHA: (_error, sha, _stderr) ->
     @key = sha.slice(0,6)

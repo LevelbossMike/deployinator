@@ -12,19 +12,19 @@ module.exports = Deploy = (function() {
     this.manifestSize = options.manifestSize;
   }
 
-  Deploy.prototype.deploy = function(value) {
+  Deploy.prototype.upload = function(value) {
     var key;
     key = this._getKey();
-    this.adapter.deployBootstrapCode(key, value);
+    this.adapter.uploadBootstrapCode(key, value);
     this.adapter.updateManifest(this.manifest, key);
     return this.adapter.cleanUpManifest(this.manifest, this.manifestSize);
   };
 
-  Deploy.prototype.listDeploys = function(limit) {
+  Deploy.prototype.listUploads = function(limit) {
     if (limit == null) {
       limit = this.manifestSize;
     }
-    return this.adapter.listDeploys(this.manifest, limit);
+    return this.adapter.listUploads(this.manifest, limit);
   };
 
   Deploy.prototype._getKey = function() {

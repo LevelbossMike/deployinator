@@ -22,26 +22,26 @@ options =
   manifest: MANIFEST
   manifestSize: MANIFEST_SIZE
 
-deployWithSHA = (sha, done) ->
+uploadWithSHA = (sha, done) ->
   sandbox = sinon.sandbox.create()
   sandbox
     .stub(git.Command.prototype, 'exec')
     .yields('error', sha, 'stderr')
   deploy = new Deploy(options)
 
-  deployment = deploy.deploy(DOCUMENT_TO_SAVE)
-  deployment.then ->
+  upload = deploy.upload(DOCUMENT_TO_SAVE)
+  upload.then ->
     done?()
 
   sandbox.restore()
-  deployment
+  upload
 
-fillUpManifest = (deploymentCount, shaList = null) ->
+fillUpManifest = (uploadCount, shaList = null) ->
   promises = []
-  for n in[1..deploymentCount]
+  for n in[1..uploadCount]
     newSHA = GIT_SHA.replace(GIT_SHA.charAt(0), n)
     shaList.push(getShortShaVersion(newSHA)) if shaList?
-    promises.push(deployWithSHA(newSHA))
+    promises.push(uploadWithSHA(newSHA))
   promises
 
 cleanUpRedis = (done) ->
@@ -51,10 +51,10 @@ cleanUpRedis = (done) ->
 
 describe 'Deploy', ->
 
-  describe '#deploy', ->
+  describe '#upload', ->
 
     beforeEach (done) ->
-      deployWithSHA(GIT_SHA, done)
+      uploadWithSHA(GIT_SHA, done)
 
     afterEach (done) ->
       cleanUpRedis(done)
@@ -80,7 +80,7 @@ describe 'Deploy', ->
     it 'makes the deploy key available as a property after deploying', ->
       expect(deploy.key).to.be(GIT_SHA_SHORTENED)
 
-  describe '#listDeploys ', ->
+  describe '#listUploads ', ->
     shaList = []
 
     beforeEach ->
@@ -91,12 +91,12 @@ describe 'Deploy', ->
       cleanUpRedis(done)
 
     it 'lists all the deploys stored in the deploy manifest', ->
-      deploy.listDeploys()
+      deploy.listUploads()
         .then (values) ->
           expect(values).to.contain("#{sha}") for sha in shaList
 
     it 'lists the last n-deploys when passing a number n', ->
-      deploy.listDeploys(5)
+      deploy.listUploads(5)
         .then (values) ->
           expect(values.length).to.be(5)
           expect(values[0]).to.be("#{shaList[shaList.length - 1]}")

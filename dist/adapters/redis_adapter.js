@@ -7,7 +7,7 @@ module.exports = RedisAdapter = (function() {
     this.client = redis.createClient(options);
   }
 
-  RedisAdapter.prototype.deployBootstrapCode = function(timestampKey, bootstrapFile) {
+  RedisAdapter.prototype.uploadBootstrapCode = function(timestampKey, bootstrapFile) {
     return this.client.set(timestampKey, bootstrapFile);
   };
 
@@ -19,7 +19,7 @@ module.exports = RedisAdapter = (function() {
     return this.client.ltrim(manifest, 0, manifestSize - 1);
   };
 
-  RedisAdapter.prototype.listDeploys = function(manifest, limit) {
+  RedisAdapter.prototype.listUploads = function(manifest, limit) {
     return this.client.lrange(manifest, 0, limit - 1);
   };
 
