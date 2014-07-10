@@ -18,6 +18,7 @@
     "sinon": "^1.10.2"
   },
   "dependencies": {
+    "rsvp": "^3.0.9",
     "then-redis": "^0.3.12"
   },
   "description": "Lightning fast deployments of JavaScript Apps",

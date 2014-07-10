@@ -4,11 +4,11 @@ module.exports = class RedisAdapter
   constructor: (options) ->
     @client = redis.createClient(options)
 
-  uploadBootstrapCode: (timestampKey, bootstrapFile) ->
-    @client.set(timestampKey, bootstrapFile)
+  upload: (key, value) ->
+    @client.set(key, value)
 
-  updateManifest: (manifest, timestampKey) ->
-    @client.lpush(manifest, timestampKey)
+  updateManifest: (manifest, key) ->
+    @client.lpush(manifest, key)
 
   cleanUpManifest: (manifest, manifestSize) ->
     @client.ltrim(manifest, 0, manifestSize - 1)

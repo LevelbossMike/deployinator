@@ -7,12 +7,12 @@ module.exports = RedisAdapter = (function() {
     this.client = redis.createClient(options);
   }
 
-  RedisAdapter.prototype.uploadBootstrapCode = function(timestampKey, bootstrapFile) {
-    return this.client.set(timestampKey, bootstrapFile);
+  RedisAdapter.prototype.upload = function(key, value) {
+    return this.client.set(key, value);
   };
 
-  RedisAdapter.prototype.updateManifest = function(manifest, timestampKey) {
-    return this.client.lpush(manifest, timestampKey);
+  RedisAdapter.prototype.updateManifest = function(manifest, key) {
+    return this.client.lpush(manifest, key);
   };
 
   RedisAdapter.prototype.cleanUpManifest = function(manifest, manifestSize) {

@@ -1,8 +1,10 @@
-var Deploy, RedisAdapter, git;
+var Deploy, RSVP, RedisAdapter, git;
 
 RedisAdapter = require('./adapters/redis_adapter');
 
 git = require('gitty');
+
+RSVP = require('rsvp');
 
 module.exports = Deploy = (function() {
   function Deploy(options) {
@@ -15,7 +17,7 @@ module.exports = Deploy = (function() {
   Deploy.prototype.upload = function(value) {
     var key;
     key = this._getKey();
-    this.adapter.uploadBootstrapCode(key, value);
+    this.adapter.upload(key, value);
     this.adapter.updateManifest(this.manifest, key);
     return this.adapter.cleanUpManifest(this.manifest, this.manifestSize);
   };
@@ -25,6 +27,24 @@ module.exports = Deploy = (function() {
       limit = this.manifestSize;
     }
     return this.adapter.listUploads(this.manifest, limit);
+  };
+
+  Deploy.prototype.setCurrent = function(key) {
+    var adapter, manifest, manifestSize;
+    adapter = this.adapter;
+    manifest = this.manifest;
+    manifestSize = this.manifestSize;
+    return new RSVP.Promise(function(resolve, reject) {
+      return adapter.listUploads(manifest, manifestSize).then(function(keys) {
+        if (keys.indexOf(key) === -1) {
+          return reject();
+        } else {
+          return adapter.upload("" + manifest + ":current", key).then(function() {
+            return resolve();
+          });
+        }
+      });
+    });
   };
 
   Deploy.prototype._getKey = function() {

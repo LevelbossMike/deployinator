@@ -47,6 +47,7 @@ fillUpManifest = (uploadCount, shaList = null) ->
 cleanUpRedis = (done) ->
   redisClient.del(MANIFEST)
     .then(-> redisClient.del(GIT_SHA_SHORTENED))
+    .then(-> redisClient.del("#{MANIFEST}:current"))
     .then(-> done?())
 
 describe 'Deploy', ->
@@ -100,3 +101,35 @@ describe 'Deploy', ->
         .then (values) ->
           expect(values.length).to.be(5)
           expect(values[0]).to.be("#{shaList[shaList.length - 1]}")
+
+  describe '#setCurrent', ->
+    shaList = []
+
+    beforeEach ->
+      fillUpManifest(MANIFEST_SIZE, shaList)
+
+    afterEach (done) ->
+      cleanUpRedis(done)
+
+    it 'sets <manifest>:current when passed key is included in manifest', ->
+      key = shaList[0]
+
+      deploy.setCurrent(key)
+        .then ->
+          redisClient.get("#{MANIFEST}:current")
+            .then (value) ->
+              expect(value).to.be(key)
+
+    it "rejects and doesn't set current when key is not in manifest", ->
+      key = 'some key not included in manifest'
+
+      wrongBehaviour = ->
+        expect(false).to.be.ok()
+
+      correctBehaviour = ->
+        redisClient.get("#{MANIFEST}:current")
+          .then (value) ->
+            expect(value).to.not.be(key)
+
+      deploy.setCurrent(key)
+        .then(wrongBehaviour, correctBehaviour)

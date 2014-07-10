@@ -1,5 +1,6 @@
 RedisAdapter = require('./adapters/redis_adapter')
 git          = require('gitty')
+RSVP         = require('rsvp')
 
 module.exports = class Deploy
 
@@ -30,12 +31,24 @@ module.exports = class Deploy
   upload: (value) ->
     key = @_getKey()
 
-    @adapter.uploadBootstrapCode(key, value)
+    @adapter.upload(key, value)
     @adapter.updateManifest(@manifest, key)
     @adapter.cleanUpManifest(@manifest, @manifestSize)
 
   listUploads: (limit = @manifestSize) ->
     @adapter.listUploads(@manifest, limit)
+
+  setCurrent: (key) ->
+    adapter      = @adapter
+    manifest     = @manifest
+    manifestSize = @manifestSize
+
+    new RSVP.Promise (resolve, reject) ->
+      adapter.listUploads(manifest, manifestSize).then (keys) ->
+        if keys.indexOf(key) == -1
+          reject()
+        else
+          adapter.upload("#{manifest}:current", key).then -> resolve()
 
   # Internal: Gets the current time as a UnixTimestamp and sets it as the
   # timestamp property on this {Object}.
