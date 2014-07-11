@@ -6,7 +6,7 @@ sinon      = require('sinon')
 Deploy     = require('../../../dist/deployinator.js')
 
 getShortShaVersion = (sha) ->
-  sha.slice(0, 6)
+  sha.slice(0, 7)
 
 REDIS_CONNECTION_OPTIONS = { host: 'localhost', port: 6379 }
 DOCUMENT_TO_SAVE         = 'Hello'

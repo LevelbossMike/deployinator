@@ -70,4 +70,4 @@ module.exports = class Deploy
   #
   # Returns a {String}.
   _sliceGitSHA: (_error, sha, _stderr) ->
-    @key = sha.slice(0,6)
+    @key = sha.slice(0,7)

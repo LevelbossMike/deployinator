@@ -56,7 +56,7 @@ module.exports = Deploy = (function() {
   };
 
   Deploy.prototype._sliceGitSHA = function(_error, sha, _stderr) {
-    return this.key = sha.slice(0, 6);
+    return this.key = sha.slice(0, 7);
   };
 
   return Deploy;
