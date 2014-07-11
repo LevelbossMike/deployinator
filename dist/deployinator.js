@@ -48,10 +48,10 @@ module.exports = Deploy = (function() {
   };
 
   Deploy.prototype._getKey = function() {
-    var cmd;
+    var cmd, useSync;
     this.key = null;
     cmd = new git.Command('./', 'rev-parse', [], 'HEAD');
-    cmd.exec(this._sliceGitSHA.bind(this));
+    cmd.exec(this._sliceGitSHA.bind(this), useSync = true);
     return this.key;
   };
 

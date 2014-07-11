@@ -56,7 +56,7 @@ module.exports = class Deploy
     @key = null
     cmd  = new git.Command('./', 'rev-parse', [], 'HEAD')
 
-    cmd.exec(@_sliceGitSHA.bind(@))
+    cmd.exec(@_sliceGitSHA.bind(@), useSync = true)
 
     @key
 
