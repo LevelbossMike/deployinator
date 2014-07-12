@@ -54,8 +54,8 @@ module.exports = class Deploy
   getCurrent: ->
     @adapter.get(@_currentKey())
 
-  # Internal: Gets the current time as a UnixTimestamp and sets it as the
-  # timestamp property on this {Object}.
+  # Internal: Gets the current git-sha and sets it as the key property on this
+  # {Object}
   _getKey: ->
     @key = null
     cmd  = new git.Command('./', 'rev-parse', [], 'HEAD')
