@@ -42,13 +42,17 @@ module.exports = class Deploy
     adapter      = @adapter
     manifest     = @manifest
     manifestSize = @manifestSize
+    currentKey   = @_currentKey()
 
     new RSVP.Promise (resolve, reject) ->
       adapter.listUploads(manifest, manifestSize).then (keys) ->
         if keys.indexOf(key) == -1
           reject()
         else
-          adapter.upload("#{manifest}:current", key).then -> resolve()
+          adapter.upload(currentKey, key).then -> resolve()
+
+  getCurrent: ->
+    @adapter.get(@_currentKey())
 
   # Internal: Gets the current time as a UnixTimestamp and sets it as the
   # timestamp property on this {Object}.
@@ -71,3 +75,6 @@ module.exports = class Deploy
   # Returns a {String}.
   _sliceGitSHA: (_error, sha, _stderr) ->
     @key = sha.slice(0,7)
+
+  _currentKey: ->
+    @currentKey = @currentKey ? "#{@manifest}:current"

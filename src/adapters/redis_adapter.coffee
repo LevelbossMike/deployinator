@@ -15,3 +15,6 @@ module.exports = class RedisAdapter
 
   listUploads: (manifest, limit) ->
     @client.lrange(manifest, 0, limit - 1)
+
+  get: (key) ->
+    @client.get(key)

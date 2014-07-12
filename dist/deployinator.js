@@ -30,21 +30,26 @@ module.exports = Deploy = (function() {
   };
 
   Deploy.prototype.setCurrent = function(key) {
-    var adapter, manifest, manifestSize;
+    var adapter, currentKey, manifest, manifestSize;
     adapter = this.adapter;
     manifest = this.manifest;
     manifestSize = this.manifestSize;
+    currentKey = this._currentKey();
     return new RSVP.Promise(function(resolve, reject) {
       return adapter.listUploads(manifest, manifestSize).then(function(keys) {
         if (keys.indexOf(key) === -1) {
           return reject();
         } else {
-          return adapter.upload("" + manifest + ":current", key).then(function() {
+          return adapter.upload(currentKey, key).then(function() {
             return resolve();
           });
         }
       });
     });
+  };
+
+  Deploy.prototype.getCurrent = function() {
+    return this.adapter.get(this._currentKey());
   };
 
   Deploy.prototype._getKey = function() {
@@ -57,6 +62,11 @@ module.exports = Deploy = (function() {
 
   Deploy.prototype._sliceGitSHA = function(_error, sha, _stderr) {
     return this.key = sha.slice(0, 7);
+  };
+
+  Deploy.prototype._currentKey = function() {
+    var _ref;
+    return this.currentKey = (_ref = this.currentKey) != null ? _ref : "" + this.manifest + ":current";
   };
 
   return Deploy;

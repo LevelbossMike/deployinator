@@ -23,6 +23,10 @@ module.exports = RedisAdapter = (function() {
     return this.client.lrange(manifest, 0, limit - 1);
   };
 
+  RedisAdapter.prototype.get = function(key) {
+    return this.client.get(key);
+  };
+
   return RedisAdapter;
 
 })();

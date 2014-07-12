@@ -52,57 +52,58 @@ cleanUpRedis = (done) ->
 
 describe 'Deploy', ->
 
-  describe '#upload', ->
+  describe 'First one has to upload a bootstrap file', ->
+    describe '#upload', ->
 
-    beforeEach (done) ->
-      uploadWithSHA(GIT_SHA, done)
+      beforeEach (done) ->
+        uploadWithSHA(GIT_SHA, done)
 
-    afterEach (done) ->
-      cleanUpRedis(done)
+      afterEach (done) ->
+        cleanUpRedis(done)
 
-    it 'stores a passed value in Redis with the current git-sha as key', ->
-      redisClient.get(GIT_SHA_SHORTENED)
-        .then (value) ->
-          expect(value).to.be(DOCUMENT_TO_SAVE)
-
-    it 'updates a list of references of last deployments', ->
-      redisClient.lrange(MANIFEST, 0, 10)
-        .then (value) ->
-          expect(value.length).to.be.greaterThan(0)
-
-    it 'only keeps <manifestSize> revisions of deploys', ->
-      moreThanManifestSize = MANIFEST_SIZE + 2
-
-      RSVP.all(fillUpManifest(moreThanManifestSize)).then ->
-        redisClient.lrange(MANIFEST, 0, moreThanManifestSize)
+      it 'stores a passed value in Redis with the current git-sha as key', ->
+        redisClient.get(GIT_SHA_SHORTENED)
           .then (value) ->
-            expect(value.length).to.be(MANIFEST_SIZE)
+            expect(value).to.be(DOCUMENT_TO_SAVE)
 
-    it 'makes the deploy key available as a property after deploying', ->
-      expect(deploy.key).to.be(GIT_SHA_SHORTENED)
+      it 'updates a list of references of last deployments', ->
+        redisClient.lrange(MANIFEST, 0, 10)
+          .then (value) ->
+            expect(value.length).to.be.greaterThan(0)
 
-  describe '#listUploads ', ->
-    shaList = []
+      it 'only keeps <manifestSize> revisions of deploys', ->
+        moreThanManifestSize = MANIFEST_SIZE + 2
 
-    beforeEach ->
+        RSVP.all(fillUpManifest(moreThanManifestSize)).then ->
+          redisClient.lrange(MANIFEST, 0, moreThanManifestSize)
+            .then (value) ->
+              expect(value.length).to.be(MANIFEST_SIZE)
+
+      it 'makes the deploy key available as a property after deploying', ->
+        expect(deploy.key).to.be(GIT_SHA_SHORTENED)
+
+    describe '#listUploads ', ->
       shaList = []
-      fillUpManifest(MANIFEST_SIZE, shaList)
 
-    afterEach (done) ->
-      cleanUpRedis(done)
+      beforeEach ->
+        shaList = []
+        fillUpManifest(MANIFEST_SIZE, shaList)
 
-    it 'lists all the deploys stored in the deploy manifest', ->
-      deploy.listUploads()
-        .then (values) ->
-          expect(values).to.contain("#{sha}") for sha in shaList
+      afterEach (done) ->
+        cleanUpRedis(done)
 
-    it 'lists the last n-deploys when passing a number n', ->
-      deploy.listUploads(5)
-        .then (values) ->
-          expect(values.length).to.be(5)
-          expect(values[0]).to.be("#{shaList[shaList.length - 1]}")
+      it 'lists all the deploys stored in the deploy manifest', ->
+        deploy.listUploads()
+          .then (values) ->
+            expect(values).to.contain("#{sha}") for sha in shaList
 
-  describe '#setCurrent', ->
+      it 'lists the last n-deploys when passing a number n', ->
+        deploy.listUploads(5)
+          .then (values) ->
+            expect(values.length).to.be(5)
+            expect(values[0]).to.be("#{shaList[shaList.length - 1]}")
+
+  describe 'To actually deploy one has to set the current upload', ->
     shaList = []
 
     beforeEach ->
@@ -111,25 +112,36 @@ describe 'Deploy', ->
     afterEach (done) ->
       cleanUpRedis(done)
 
-    it 'sets <manifest>:current when passed key is included in manifest', ->
-      key = shaList[0]
+    describe '#setCurrent', ->
 
-      deploy.setCurrent(key)
-        .then ->
+      it 'sets <manifest>:current when passed key is included in manifest', ->
+        key = shaList[0]
+
+        deploy.setCurrent(key)
+          .then ->
+            redisClient.get("#{MANIFEST}:current")
+              .then (value) ->
+                expect(value).to.be(key)
+
+      it "rejects and doesn't set current when key is not in manifest", ->
+        key = 'some key not included in manifest'
+
+        wrongBehaviour = ->
+          expect(false).to.be.ok()
+
+        correctBehaviour = ->
           redisClient.get("#{MANIFEST}:current")
             .then (value) ->
-              expect(value).to.be(key)
+              expect(value).to.not.be(key)
 
-    it "rejects and doesn't set current when key is not in manifest", ->
-      key = 'some key not included in manifest'
+        deploy.setCurrent(key)
+          .then(wrongBehaviour, correctBehaviour)
 
-      wrongBehaviour = ->
-        expect(false).to.be.ok()
+    describe '#getCurrent', ->
+      beforeEach ->
+        deploy.setCurrent(shaList[0])
 
-      correctBehaviour = ->
-        redisClient.get("#{MANIFEST}:current")
+      it 'returns the currently set <manifest>:current value', ->
+        deploy.getCurrent()
           .then (value) ->
-            expect(value).to.not.be(key)
-
-      deploy.setCurrent(key)
-        .then(wrongBehaviour, correctBehaviour)
+            expect(value).to.be(shaList[0])
