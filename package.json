@@ -1,6 +1,6 @@
 {
   "name": "deployinator",
-  "version": "0.3.2",
+  "version": "0.4.0",
   "main": "dist/deployinator.js",
   "scripts": {
     "test": "make test"
