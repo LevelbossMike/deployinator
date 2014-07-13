@@ -66,6 +66,16 @@ describe 'Deploy', ->
           .then (value) ->
             expect(value).to.be(DOCUMENT_TO_SAVE)
 
+      it 'rejects when current git-sha is already in manifest', ->
+        correctBehaviour = ->
+          expect(true).to.be.ok()
+
+        wrongBehaviour = ->
+          expect(false).to.be.ok()
+
+        uploadWithSHA(GIT_SHA)
+          .then(wrongBehaviour, correctBehaviour)
+
       it 'updates a list of references of last deployments', ->
         redisClient.lrange(MANIFEST, 0, 10)
           .then (value) ->
@@ -85,9 +95,10 @@ describe 'Deploy', ->
     describe '#listUploads ', ->
       shaList = []
 
-      beforeEach ->
+      beforeEach (done) ->
         shaList = []
-        fillUpManifest(MANIFEST_SIZE, shaList)
+        RSVP.all(fillUpManifest(MANIFEST_SIZE, shaList)).then ->
+          done()
 
       afterEach (done) ->
         cleanUpRedis(done)
@@ -106,8 +117,9 @@ describe 'Deploy', ->
   describe 'To actually deploy one has to set the current upload', ->
     shaList = []
 
-    beforeEach ->
-      fillUpManifest(MANIFEST_SIZE, shaList)
+    beforeEach (done) ->
+      RSVP.all(fillUpManifest(MANIFEST_SIZE, shaList)).then ->
+        done()
 
     afterEach (done) ->
       cleanUpRedis(done)

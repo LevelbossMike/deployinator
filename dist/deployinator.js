@@ -17,9 +17,7 @@ module.exports = Deploy = (function() {
   Deploy.prototype.upload = function(value) {
     var key;
     key = this._getKey();
-    this.adapter.upload(key, value);
-    this.adapter.updateManifest(this.manifest, key);
-    return this.adapter.cleanUpManifest(this.manifest, this.manifestSize);
+    return new RSVP.Promise(this._uploadIfNotAlreadyInManifest(key, value).bind(this));
   };
 
   Deploy.prototype.listUploads = function(limit) {
@@ -30,26 +28,43 @@ module.exports = Deploy = (function() {
   };
 
   Deploy.prototype.setCurrent = function(key) {
-    var adapter, currentKey, manifest, manifestSize;
-    adapter = this.adapter;
-    manifest = this.manifest;
-    manifestSize = this.manifestSize;
-    currentKey = this._currentKey();
-    return new RSVP.Promise(function(resolve, reject) {
-      return adapter.listUploads(manifest, manifestSize).then(function(keys) {
-        if (keys.indexOf(key) === -1) {
-          return reject();
-        } else {
-          return adapter.upload(currentKey, key).then(function() {
-            return resolve();
-          });
-        }
-      });
-    });
+    return new RSVP.Promise(this._setCurrentIfKeyInManifest(key).bind(this));
   };
 
   Deploy.prototype.getCurrent = function() {
     return this.adapter.get(this._currentKey());
+  };
+
+  Deploy.prototype._uploadIfNotAlreadyInManifest = function(key, value) {
+    return function(resolve, reject) {
+      return this.listUploads().then((function(keys) {
+        var promises;
+        if (keys.indexOf(key) === -1) {
+          promises = {
+            upload: this.adapter.upload(key, value),
+            update: this.adapter.updateManifest(this.manifest, key),
+            cleanup: this.adapter.cleanUpManifest(this.manifest, this.manifestSize)
+          };
+          return resolve(RSVP.hash(promises));
+        } else {
+          return reject();
+        }
+      }).bind(this));
+    };
+  };
+
+  Deploy.prototype._setCurrentIfKeyInManifest = function(key) {
+    return function(resolve, reject) {
+      return this.adapter.listUploads(this.manifest, this.manifestSize).then((function(keys) {
+        if (keys.indexOf(key) === -1) {
+          return reject();
+        } else {
+          return this.adapter.upload(this._currentKey(), key).then(function() {
+            return resolve();
+          });
+        }
+      }).bind(this));
+    };
   };
 
   Deploy.prototype._getKey = function() {

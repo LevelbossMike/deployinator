@@ -30,29 +30,58 @@ module.exports = class Deploy
 
   upload: (value) ->
     key = @_getKey()
-
-    @adapter.upload(key, value)
-    @adapter.updateManifest(@manifest, key)
-    @adapter.cleanUpManifest(@manifest, @manifestSize)
+    new RSVP.Promise(@_uploadIfNotAlreadyInManifest(key, value).bind(@))
 
   listUploads: (limit = @manifestSize) ->
     @adapter.listUploads(@manifest, limit)
 
   setCurrent: (key) ->
-    adapter      = @adapter
-    manifest     = @manifest
-    manifestSize = @manifestSize
-    currentKey   = @_currentKey()
-
-    new RSVP.Promise (resolve, reject) ->
-      adapter.listUploads(manifest, manifestSize).then (keys) ->
-        if keys.indexOf(key) == -1
-          reject()
-        else
-          adapter.upload(currentKey, key).then -> resolve()
+    new RSVP.Promise(@_setCurrentIfKeyInManifest(key).bind(@))
 
   getCurrent: ->
     @adapter.get(@_currentKey())
+
+  # Internal: Uploads the passed key/value pair to the store via the adapter.
+  # This method returns a {Function} that will reject if the passed key is
+  # already included in the manifest. If the key is not included in the
+  # manifest it will upload the key/value pair, clean up the manifest according
+  # to the manifest-config and resolve with a {Promise} that resolves when the
+  # adapter tasks are finished.
+  #
+  # key - The key the passed value should be stored with via the adapter.
+  # value - The value to be stored in the store via the adapter.
+  #
+  # Returns a {Function}.
+  _uploadIfNotAlreadyInManifest: (key, value) ->
+    (resolve, reject) ->
+      @listUploads().then ((keys) ->
+        if keys.indexOf(key) == -1
+          promises =
+            upload: @adapter.upload(key, value)
+            update: @adapter.updateManifest(@manifest, key)
+            cleanup: @adapter.cleanUpManifest(@manifest, @manifestSize)
+
+          resolve(RSVP.hash(promises))
+        else
+          reject()
+      ).bind(@)
+
+  # Internal: Sets <manifest>:current via the adapter. This method returns
+  # a {Function} that will reject when the passed key is not included in the
+  # manifest. When the passed key is included in the manifest it will set the
+  # passed key as current and resolve.
+  #
+  # key - The key that should be set as current on the manifest.
+  #
+  # Returns a {Function}.
+  _setCurrentIfKeyInManifest: (key) ->
+    (resolve, reject) ->
+      @adapter.listUploads(@manifest, @manifestSize).then ((keys) ->
+        if keys.indexOf(key) == -1
+          reject()
+        else
+          @adapter.upload(@_currentKey(), key).then -> resolve()
+      ).bind(@)
 
   # Internal: Gets the current git-sha and sets it as the key property on this
   # {Object}
