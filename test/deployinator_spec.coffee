@@ -8,7 +8,6 @@ Deploy     = require('../../../dist/deployinator.js')
 getShortShaVersion = (sha) ->
   sha.slice(0, 7)
 
-
 REDIS_CONNECTION_OPTIONS = { host: 'localhost', port: 6379 }
 DOCUMENT_TO_SAVE         = 'Hello'
 MANIFEST                 = 'test-deploy-manifest'
@@ -46,14 +45,21 @@ fillUpManifest = (uploadCount, shaList = null) ->
     promises.push(uploadWithSHA(newSHA))
   promises
 
-cleanUpRedis = (done) ->
-  redisClient.del(MANIFEST)
-    .then(-> redisClient.del(GIT_SHA_SHORTENED))
-    .then(-> redisClient.del("#{MANIFEST}:current"))
-    .then(-> done?())
-
 deployKeyForSHA = (sha) ->
   "#{MANIFEST}:#{sha}"
+
+delKeysByWildcard = (wildcard) ->
+  promise = new RSVP.Promise (resolve, reject) ->
+    redisClient.keys(wildcard).then (values) ->
+      promises = []
+      values.forEach (val) ->
+        promises.push(redisClient.del(val))
+      RSVP.all(promises).then(resolve, reject)
+
+cleanUpRedis = (done) ->
+  redisClient.del(MANIFEST)
+    .then(-> delKeysByWildcard("#{MANIFEST}:*"))
+    .then(-> done?())
 
 describe 'Deploy', ->
 
