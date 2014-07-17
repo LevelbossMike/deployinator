@@ -89,7 +89,7 @@ module.exports = class Deploy
     @key = null
     cmd  = new git.Command('./', 'rev-parse', [], 'HEAD')
 
-    cmd.exec(@_sliceGitSHA.bind(@), useSync = true)
+    cmd.exec(@_generateKey.bind(@), useSync = true)
 
     @key
 
@@ -102,8 +102,8 @@ module.exports = class Deploy
   # _stderr - stderr message that gets passen when git-rev command fails
   #
   # Returns a {String}.
-  _sliceGitSHA: (_error, sha, _stderr) ->
-    @key = sha.slice(0,7)
+  _generateKey: (_error, sha, _stderr) ->
+    @key = "#{@manifest}:#{sha.slice(0,7)}"
 
   _currentKey: ->
     @currentKey = @currentKey ? "#{@manifest}:current"

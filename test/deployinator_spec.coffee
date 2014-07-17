@@ -8,12 +8,14 @@ Deploy     = require('../../../dist/deployinator.js')
 getShortShaVersion = (sha) ->
   sha.slice(0, 7)
 
+
 REDIS_CONNECTION_OPTIONS = { host: 'localhost', port: 6379 }
 DOCUMENT_TO_SAVE         = 'Hello'
 MANIFEST                 = 'test-deploy-manifest'
 MANIFEST_SIZE            = 10
 GIT_SHA                  = '04b724a6c656a21795067f9c344d22532cf593ae'
 GIT_SHA_SHORTENED        = getShortShaVersion(GIT_SHA)
+DEPLOY_KEY               = "#{MANIFEST}:#{GIT_SHA_SHORTENED}"
 redisClient              = redis.createClient(REDIS_CONNECTION_OPTIONS)
 deploy                   = null
 
@@ -50,6 +52,9 @@ cleanUpRedis = (done) ->
     .then(-> redisClient.del("#{MANIFEST}:current"))
     .then(-> done?())
 
+deployKeyForSHA = (sha) ->
+  "#{MANIFEST}:#{sha}"
+
 describe 'Deploy', ->
 
   describe 'First one has to upload a bootstrap file', ->
@@ -61,8 +66,8 @@ describe 'Deploy', ->
       afterEach (done) ->
         cleanUpRedis(done)
 
-      it 'stores a passed value in Redis with the current git-sha as key', ->
-        redisClient.get(GIT_SHA_SHORTENED)
+      it 'stores value in Redis with the <manifest>:<git-sha> as key', ->
+        redisClient.get(DEPLOY_KEY)
           .then (value) ->
             expect(value).to.be(DOCUMENT_TO_SAVE)
 
@@ -90,7 +95,7 @@ describe 'Deploy', ->
               expect(value.length).to.be(MANIFEST_SIZE)
 
       it 'makes the deploy key available as a property after deploying', ->
-        expect(deploy.key).to.be(GIT_SHA_SHORTENED)
+        expect(deploy.key).to.be(DEPLOY_KEY)
 
     describe '#listUploads ', ->
       shaList = []
@@ -106,13 +111,14 @@ describe 'Deploy', ->
       it 'lists all the deploys stored in the deploy manifest', ->
         deploy.listUploads()
           .then (values) ->
-            expect(values).to.contain("#{sha}") for sha in shaList
+            expect(values).to.contain(deployKeyForSHA(sha)) for sha in shaList
 
       it 'lists the last n-deploys when passing a number n', ->
         deploy.listUploads(5)
           .then (values) ->
+            firstDeployKey = deployKeyForSHA(shaList[shaList.length - 1])
             expect(values.length).to.be(5)
-            expect(values[0]).to.be("#{shaList[shaList.length - 1]}")
+            expect(values[0]).to.be(firstDeployKey)
 
   describe 'To actually deploy one has to set the current upload', ->
     shaList = []
@@ -127,7 +133,7 @@ describe 'Deploy', ->
     describe '#setCurrent', ->
 
       it 'sets <manifest>:current when passed key is included in manifest', ->
-        key = shaList[0]
+        key = deployKeyForSHA(shaList[0])
 
         deploy.setCurrent(key)
           .then ->
@@ -151,9 +157,9 @@ describe 'Deploy', ->
 
     describe '#getCurrent', ->
       beforeEach ->
-        deploy.setCurrent(shaList[0])
+        deploy.setCurrent(deployKeyForSHA(shaList[0]))
 
       it 'returns the currently set <manifest>:current value', ->
         deploy.getCurrent()
           .then (value) ->
-            expect(value).to.be(shaList[0])
+            expect(value).to.be(deployKeyForSHA(shaList[0]))
